@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 
-T = 10 # 随机取样的函数个数
+num_samples = 10 # 随机取样的函数个数
 n_unroll = 20 # BPTT中unroll的数量
 n_dimension = 3 # 原问题中f的参数的数量
 hidden_size = 20 # LSTM中隐藏层的大小
@@ -20,42 +20,45 @@ def construct_graph():
                     for _ in range(num_layers)])) 
 
             loss = 0
-            for t in range(T): # 最后的loss对T个样本取平均
-                print("t:", t);
+            for cur in range(num_samples):
+                print("sample:", cur)
                 # 随机取样一个n元二次函数
                 W = tf.random_normal([n_dimension, n_dimension]);
                 y = tf.random_normal([n_dimension, 1])
                 theta = tf.random_normal([n_dimension, 1])
-                f = tf.reduce_sum(tf.square(tf.matmul(W, theta) - y))
-                grad_f = tf.gradients(f, theta)[0] # 计算f对theta的梯度（注意返回对象是个list）
+
 
                 batch_size = 1 # 一次送一个f进去
                 state_list = [cell_list[i].zero_state(batch_size, tf.float32) for i in range(n_dimension)] # 保存每个lstm的隐藏层状态
-                sum_f = 0
-                g_new_list = []
-                for i in range(n_dimension):
-                    cell = cell_list[i]
-                    state = state_list[i]
-                    grad_h_t = tf.slice(grad_f, begin=[i, 0], size=[1, 1])
-                    # 当前f的第i个参数对theta的梯度
 
-                    # BPTT
-                    for k in range(n_unroll):
-                        if k > 0: 
+                # BPTT 
+                sum_f = 0
+                for t in range(n_unroll): # 这里和论文不太一样，只进行了n_unroll=20次（因为不太会写truncated BPTT）
+                    f = tf.reduce_sum(tf.square(tf.matmul(W, theta) - y)) # 每次的theta都不一样
+                    grad_f = tf.gradients(f, theta)[0] # 计算f对theta的梯度（注意返回对象是个list）
+
+                    g_new_list = []
+                    for i in range(n_dimension):
+                        cell = cell_list[i]
+                        state = state_list[i]
+                        grad_h_t = tf.slice(grad_f, begin=[i, 0], size=[1, 1])
+                        # 当前f的第i个参数对theta的梯度
+
+                        if(i>0): 
                             tf.get_variable_scope().reuse_variables()
                         cell_output, state = cell(grad_h_t, state) 
                         g_new_i = tf.reduce_sum(cell_output) # 使用lstm输出状态的权值和作为f的参数i的变化量
+                        g_new_list.append(g_new_i)
 
-                    g_new_list.append(g_new_i)
+                    # 转换成tensor
+                    g_new = tf.reshape(tf.squeeze(tf.stack(g_new_list)), [n_dimension, 1])  # [n_dimension, 1] tensor
+                    theta = tf.add(theta, g_new) # 更新f的参数theta
+                    f_at_theta_t = tf.reduce_sum(tf.square(tf.matmul(W, theta) - y)) # 计算现在的loss
+                    sum_f += f_at_theta_t
 
-                # 转换成tensor
-                g_new = tf.reshape(tf.squeeze(tf.stack(g_new_list)), [n_dimension, 1])  # [n_dimension, 1] tensor
-                theta = tf.add(theta, g_new) # 更新f的参数theta
-                f_at_theta_t = tf.reduce_sum(tf.square(tf.matmul(W, theta) - y)) # 计算现在的loss
+                loss += sum_f
 
-                loss += f_at_theta_t
-
-        loss = loss / T
+        loss = loss / num_samples
         tvars = tf.trainable_variables()  
         grads = tf.gradients(loss, tvars)
         lr = 0.001  

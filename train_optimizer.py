@@ -7,7 +7,9 @@ n_dimension = 3 # 原问题中f的参数的数量
 hidden_size = 20 # LSTM中隐藏层的大小
 num_layers = 2 # LSTM的层数
 
-def construct_graph():
+max_epoch = 100 # 训练optimizer的epoch个数
+
+def construct_graph_and_train_optimizer():
     g = tf.Graph()
     print("Graph Construction Begin")
     with g.as_default():
@@ -65,4 +67,27 @@ def construct_graph():
         optimizer = tf.train.AdamOptimizer(lr)
         train_op = optimizer.apply_gradients(zip(grads, tvars))
 
-        print("Graph Construction End")
+    print("Graph Construction End")
+
+    with tf.Session(graph=g) as sess:
+        sess.run(tf.global_variables_initializer()) # 初始化变量
+
+        print(tf.trainable_variables())
+        max_epoch = 100
+        for epoch in range(max_epoch):
+            cost, _ = sess.run([loss, train_op]) # 计算loss并更新lstm的参数
+            print("Epoch %d : loss %f" % (epoch, cost))
+
+        import pickle
+        print("Saving variables of optimizer...")
+        variable_dict = {}
+        for var in tf.trainable_variables():
+            print(var.name)
+            print(var.eval())
+            variable_dict[var.name] = var.eval()
+        with open("variable_dict.pickle", "wb") as f:
+            pickle.dump(variable_dict, f)
+
+
+if __name__ == "__main__":
+    construct_graph_and_train_optimizer()

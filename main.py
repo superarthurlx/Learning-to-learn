@@ -92,6 +92,8 @@ def main():
             if optim_method == "lstm":
                 loss_op, f_grad_op, train_op, g_new_ph, W_ph, y_ph = build_training_graph(method=optim_method)
                 g_op, f_grad_ph = build_optimizer_graph()
+			elif optim_method == "SGD":
+                loss_op, train_op, W_ph, y_ph = build_training_graph(method=optim_method)
             else:
                 print("Error: Optimization Method Not Defined.")
                 exit()
@@ -121,6 +123,11 @@ def main():
                     loss_val, f_grad_val, _ = sess.run([loss_op, f_grad_op, train_op],
                                                        feed_dict={g_new_ph: g_new_val, W_ph: W_val, y_ph: y_val})
                     g_new_val = sess.run(g_op, feed_dict={f_grad_ph: f_grad_val})
+                    print(loss_val)
+                    cost_list.append(loss_val)
+			elif optim_method == "SGD":
+                for epoch in range(max_epoch):
+                    loss_val, _ = sess.run([loss_op, train_op], feed_dict={W_ph: W_val, y_ph: y_val})
                     print(loss_val)
                     cost_list.append(loss_val)
 

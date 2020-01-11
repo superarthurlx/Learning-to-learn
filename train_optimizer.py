@@ -64,8 +64,8 @@ def construct_graph_and_train_optimizer():
         tvars = tf.trainable_variables()  
         grads = tf.gradients(loss, tvars)
         lr = 0.001  
-        optimizer = tf.train.AdamOptimizer(lr)
-        train_op = optimizer.apply_gradients(zip(grads, tvars))
+        optimizer = tf.train.AdamOptimizer(lr) # 使用学习率0.001的adam优化器
+        train_op = optimizer.apply_gradients(zip(grads, tvars)) 
 
     print("Graph Construction End")
 
@@ -87,7 +87,7 @@ def construct_graph_and_train_optimizer():
         with open("variable_dict.pickle", "wb") as f:
             pickle.dump(variable_dict, f)
             print("Saved successfully!")
-
+        # 保存优化器参数
 
 if __name__ == "__main__":
     construct_graph_and_train_optimizer()

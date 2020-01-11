@@ -81,4 +81,4 @@ def build_training_graph(method):
     
 
 if __name__ == "__main__":
-    train()
+    main()

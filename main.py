@@ -78,7 +78,61 @@ def build_training_graph(method):
         train_op = tf.assign(theta, new_value)  # just to make it compatiable with method == "SGD case.
 
         return loss, f_grad, train_op, g_new, W, y
-    
+  
+  
+def main():
+    # 命名系统
+    # **_ph ：即placeholders
+    # **_op : 即op
+    # **_val : 真实值、系数
+
+    g = tf.Graph()
+    with g.as_default():
+        with tf.Session() as sess:
+            if optim_method == "lstm":
+                loss_op, f_grad_op, train_op, g_new_ph, W_ph, y_ph = build_training_graph(method=optim_method)
+                g_op, f_grad_ph = build_optimizer_graph()
+            else:
+                print("Error: Optimization Method Not Defined.")
+                exit()
+
+            sess.run(tf.global_variables_initializer())
+
+            ## 将已训练的optimizier复原
+            if optim_method == "lstm":
+                import pickle
+                with open("variable_dict.pickle", "rb") as f:
+                    variable_dict = pickle.load(f)
+
+                for var in tf.trainable_variables():
+
+                    ## 给当前计算（图）进行赋值
+                    if var.name in variable_dict:
+                        assign_op = var.assign(variable_dict[var.name])  # the inside param has to be a np array like this: var.assign(np.ones(12))
+                        sess.run(assign_op)
+
+            W_val, y_val = get_n_samples(n_dimension, num_samples)
+
+            ## 更新参数
+            cost_list = []
+            if optim_method == "lstm":
+                g_new_val = np.zeros([n_dimension, 1])
+                for epoch in range(max_epoch):
+                    loss_val, f_grad_val, _ = sess.run([loss_op, f_grad_op, train_op],
+                                                       feed_dict={g_new_ph: g_new_val, W_ph: W_val, y_ph: y_val})
+                    g_new_val = sess.run(g_op, feed_dict={f_grad_ph: f_grad_val})
+                    print(loss_val)
+                    cost_list.append(loss_val)
+
+            with open("cost_list_" + optim_method + ".pickle", "wb") as f:
+                pickle.dump(cost_list, f)
+
+            ## 绘制图
+            import matplotlib.pyplot as plt
+            plt.plot(range(len(cost_list)), cost_list)
+            imagename = "figure_" + optim_method + ".png"
+            plt.savefig(imagename)	
+	
 
 if __name__ == "__main__":
     main()

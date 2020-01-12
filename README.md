@@ -28,6 +28,6 @@ numpy 1.13
 
 当前复现的效果比SGD差一点。
 
-使用lstm训练的optimizer的优化效果:![](https://github.com/thwfhk/Learning-to-learn/blob/master/figure_lstm.png)
+使用lstm训练的optimizer的优化效果:![](figure_lstm.png)
 
-使用SGD的优化效果：![](https://github.com/thwfhk/Learning-to-learn/blob/master/figure_SGD.png)
+使用SGD的优化效果：![](figure_SGD.png)

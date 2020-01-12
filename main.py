@@ -7,7 +7,7 @@ n_dimension = 3 # 原问题中f的参数的数量
 hidden_size = 20 # LSTM中隐藏层的大小
 num_layers = 2 # LSTM的层数
 
-max_epoch = 100 # 训练optimizer的epoch个数, 每个epoch会取样num_samples个，每个会展开n_unroll次
+max_epoch = 20 # 训练optimizer的epoch个数, 每个epoch会取样num_samples个，每个会展开n_unroll次
 
 optim_method = "lstm"
 
@@ -21,14 +21,13 @@ def get_n_samples(n_dimension, n): # 一次取得n个样本
 
 
 def build_optimizer_graph(): 
-    ### BEGIN: GRAPH CONSnum_samplesRCUnum_samplesION  ###
     grad_f = tf.placeholder(tf.float32, [n_dimension, 1]) # 占位符
 
     cell_list = []
     for i in range(n_dimension):
         cell_list.append(
             tf.contrib.rnn.MultiRNNCell([tf.contrib.rnn.BasicLSTMCell(hidden_size, reuse=tf.get_variable_scope().reuse)
-                                         for _ in range(num_layers)]))  # num_layers = 2 according to the paper.
+                                         for _ in range(num_layers)])) 
     batch_size = 1
     state_list = [cell_list[i].zero_state(batch_size, tf.float32) for i in range(n_dimension)]
     g_new_list = []
@@ -38,14 +37,12 @@ def build_optimizer_graph():
         grad_h_t = tf.slice(grad_f, begin=[i, 0], size=[1, 1])
 
         if i > 0: tf.get_variable_scope().reuse_variables()
-        cell_output, state = cell(grad_h_t, state)  # g_new should be a scalar b/c grad_h_t is a scalar
+        cell_output, state = cell(grad_h_t, state) 
         g_new_i = tf.reduce_sum(cell_output)
 
         g_new_list.append(g_new_i)
-        # state_list[i] = state # for the next t # I don't need this list right..? b/c I'm not using t...num_samples thing.
 
-    # Reshaping g_new
-    g_new = tf.reshape(tf.squeeze(tf.stack(g_new_list)), [n_dimension, 1])  # should be a [10, 1] tensor
+    g_new = tf.reshape(tf.squeeze(tf.stack(g_new_list)), [n_dimension, 1]) 
 
     return g_new, grad_f
 
@@ -62,30 +59,23 @@ def build_training_graph(method):
     for i in range(n):
         W_i = tf.reshape(tf.slice(W, begin=[i, 0, 0], size=[1, n_dimension, n_dimension]), [n_dimension, n_dimension])
         y_i = tf.reshape(tf.slice(y, begin=[i, 0, 0], size=[1, n_dimension, 1]), [n_dimension, 1])
-        f = tf.reduce_sum(tf.square(tf.matmul(W_i, theta) - y_i))  # make this faster using tensor only
+        f = tf.reduce_sum(tf.square(tf.matmul(W_i, theta) - y_i))  
         loss += f # 损失函数更新
-    loss /= (n * n_dimension)
+    loss /= n
 
     f_grad = tf.gradients(loss, theta)[0]
 
     if method == "SGD":
         train_op = tf.train.GradientDescentOptimizer(0.5).minimize(loss)
-        # train_op = tf.train.AdamOptimizer().minimize(loss)
         return loss, train_op, W, y
 
     if method == "lstm":
         new_value = tf.add(theta, g_new)
-        train_op = tf.assign(theta, new_value)  # just to make it compatiable with method == "SGD case.
-
+        train_op = tf.assign(theta, new_value) 
         return loss, f_grad, train_op, g_new, W, y
   
   
 def main():
-    # 命名系统
-    # **_ph ：即placeholders
-    # **_op : 即op
-    # **_val : 真实值、系数
-
     g = tf.Graph()
     with g.as_default():
         with tf.Session() as sess:
@@ -107,10 +97,9 @@ def main():
                     variable_dict = pickle.load(f)
 
                 for var in tf.trainable_variables():
-
                     ## 给当前计算（图）进行赋值
                     if var.name in variable_dict:
-                        assign_op = var.assign(variable_dict[var.name])  # the inside param has to be a np array like this: var.assign(np.ones(12))
+                        assign_op = var.assign(variable_dict[var.name]) 
                         sess.run(assign_op)
 
             W_val, y_val = get_n_samples(n_dimension, num_samples)

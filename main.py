@@ -2,8 +2,8 @@ import tensorflow as tf
 import numpy as np
 
 num_samples = 10 # 随机取样的函数个数
-n_unroll = 20 # BPnum_samplesnum_samples中unroll的数量
-n_dimension = 3 # 原问题中f的参数的数量
+n_unroll = 20 # BPTT中unroll的数量
+n_dimension = 5 # 原问题中f的参数的数量
 hidden_size = 20 # LSTM中隐藏层的大小
 num_layers = 2 # LSTM的层数
 
@@ -66,7 +66,7 @@ def build_training_graph(method):
     f_grad = tf.gradients(loss, theta)[0]
 
     if method == "SGD":
-        train_op = tf.train.GradientDescentOptimizer(0.5).minimize(loss)
+        train_op = tf.train.GradientDescentOptimizer(learning_rate = 0.1).minimize(loss)
         return loss, train_op, W, y
 
     if method == "lstm":
@@ -120,11 +120,9 @@ def main():
                     print(loss_val)
                     cost_list.append(loss_val)
 
-            with open("cost_list_" + optim_method + ".pickle", "wb") as f:
-                pickle.dump(cost_list, f)
-
             ## 绘制图
             import matplotlib.pyplot as plt
+            cost_list = cost_list[3:]
             plt.plot(range(len(cost_list)), cost_list)
             imagename = "figure_" + optim_method + ".png"
             plt.savefig(imagename)	

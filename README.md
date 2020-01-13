@@ -1,9 +1,13 @@
 # Learning to learn by gradient descent by gradient descent
 
 项目名称：Learning to learn by gradient descent by gradient descent 复现
+
 参考论文：Learning to learn by gradient descent by gradient descent, 2016, NIPS
+
 项目成员：唐雯豪(@thwfhk), 巫子辰(@SuzumeWu), 杜毕安(@scncdba), 王昕兆(@wxzsan)
+
 项目地址：https://github.com/thwfhk/Learning-to-learn
+
 指导成员：黄佳磊
 
 ## 要求
@@ -31,3 +35,7 @@ numpy 1.13
 使用lstm训练的optimizer的优化效果:![](figure_lstm.png)
 
 使用SGD的优化效果：![](figure_SGD.png)
+
+## 引用
+
+感谢 https://github.com/runopti/Learning-To-Learn

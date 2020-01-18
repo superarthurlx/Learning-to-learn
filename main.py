@@ -21,12 +21,12 @@ def get_n_samples(n_dimension, n): # 一次取得n个样本
 
 
 def build_optimizer_graph(): 
-    grad_f = tf.placeholder(tf.float32, [n_dimension, 1]) # 占位符
+    grad_f = tf.compat.v1.placeholder(tf.float32, [n_dimension, 1]) # 占位符
 
     cell_list = []
     for i in range(n_dimension):
         cell_list.append(
-            tf.contrib.rnn.MultiRNNCell([tf.contrib.rnn.BasicLSTMCell(hidden_size, reuse=tf.get_variable_scope().reuse)
+            tf.compat.v1.nn.rnn_cell.MultiRNNCell([tf.compat.v1.nn.rnn_cell.BasicLSTMCell(hidden_size, reuse=tf.compat.v1.get_variable_scope().reuse)
                                          for _ in range(num_layers)])) 
     batch_size = 1
     state_list = [cell_list[i].zero_state(batch_size, tf.float32) for i in range(n_dimension)]
@@ -36,9 +36,9 @@ def build_optimizer_graph():
         state = state_list[i]
         grad_h_t = tf.slice(grad_f, begin=[i, 0], size=[1, 1])
 
-        if i > 0: tf.get_variable_scope().reuse_variables()
+        if i > 0: tf.compat.v1.get_variable_scope().reuse_variables()
         cell_output, state = cell(grad_h_t, state) 
-        g_new_i = tf.reduce_sum(cell_output)
+        g_new_i = tf.reduce_sum(input_tensor=cell_output)
 
         g_new_list.append(g_new_i)
 
@@ -49,36 +49,36 @@ def build_optimizer_graph():
 
 def build_training_graph(method):  
     n = num_samples
-    W = tf.placeholder(tf.float32, shape=[n, n_dimension, n_dimension])
-    y = tf.placeholder(tf.float32, shape=[n, n_dimension, 1])
-    theta = tf.Variable(tf.truncated_normal([n_dimension, 1]))
+    W = tf.compat.v1.placeholder(tf.float32, shape=[n, n_dimension, n_dimension])
+    y = tf.compat.v1.placeholder(tf.float32, shape=[n, n_dimension, 1])
+    theta = tf.Variable(tf.random.truncated_normal([n_dimension, 1]))
     if method == "lstm":
-        g_new = tf.placeholder(tf.float32, shape=[n_dimension, 1])
+        g_new = tf.compat.v1.placeholder(tf.float32, shape=[n_dimension, 1])
 
     loss = 0
     for i in range(n):
         W_i = tf.reshape(tf.slice(W, begin=[i, 0, 0], size=[1, n_dimension, n_dimension]), [n_dimension, n_dimension])
         y_i = tf.reshape(tf.slice(y, begin=[i, 0, 0], size=[1, n_dimension, 1]), [n_dimension, 1])
-        f = tf.reduce_sum(tf.square(tf.matmul(W_i, theta) - y_i))  
+        f = tf.reduce_sum(input_tensor=tf.square(tf.matmul(W_i, theta) - y_i))  
         loss += f # 损失函数更新
     loss /= n
 
-    f_grad = tf.gradients(loss, theta)[0]
+    f_grad = tf.gradients(ys=loss, xs=theta)[0]
 
     if method == "SGD":
-        train_op = tf.train.GradientDescentOptimizer(learning_rate = 0.1).minimize(loss)
+        train_op = tf.compat.v1.train.GradientDescentOptimizer(learning_rate = 0.1).minimize(loss)
         return loss, train_op, W, y
 
     if method == "lstm":
         new_value = tf.add(theta, g_new)
-        train_op = tf.assign(theta, new_value) 
+        train_op = tf.compat.v1.assign(theta, new_value) 
         return loss, f_grad, train_op, g_new, W, y
   
   
 def main():
     g = tf.Graph()
     with g.as_default():
-        with tf.Session() as sess:
+        with tf.compat.v1.Session() as sess:
             if optim_method == "lstm":
                 loss_op, f_grad_op, train_op, g_new_ph, W_ph, y_ph = build_training_graph(method=optim_method)
                 g_op, f_grad_ph = build_optimizer_graph()
@@ -88,7 +88,7 @@ def main():
                 print("Error: Optimization Method Not Defined.")
                 exit()
 
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
 
             ## 将已训练的optimizier复原
             if optim_method == "lstm":
@@ -96,7 +96,7 @@ def main():
                 with open("variable_dict.pickle", "rb") as f:
                     variable_dict = pickle.load(f)
 
-                for var in tf.trainable_variables():
+                for var in tf.compat.v1.trainable_variables():
                     ## 给当前计算（图）进行赋值
                     if var.name in variable_dict:
                         assign_op = var.assign(variable_dict[var.name]) 

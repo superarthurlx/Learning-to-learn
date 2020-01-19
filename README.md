@@ -59,9 +59,13 @@ matplotlib 3.1.2
 
 当前复现的效果比SGD差一点。
 
-使用lstm训练的优化器的优化效果:![](figure_lstm.png)
+使用lstm训练的优化器的优化效果:
 
-使用SGD的优化效果：![](figure_SGD.png)
+![](figure_lstm.png)
+
+使用SGD的优化效果：
+
+![](figure_SGD.png)
 
 ## 引用
 

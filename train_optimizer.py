@@ -52,8 +52,8 @@ class LSTMOptimizer_Trainer():
                     #W = tf.random.normal([n_dimension, n_dimension]);
                     #y = tf.random.normal([n_dimension, 1])
                     # 使用来自同一个最小值theta的n元二次函数
-                    W = Wn[i]
-                    y = yn[i]
+                    W = Wn[cur]
+                    y = yn[cur]
                     theta = tf.random.normal([n_dimension, 1], dtype='float')
 
                     state_list = [cell_list[i].zero_state(1, tf.float32) for i in range(n_dimension)] # 保存每个lstm的隐藏层状态
@@ -79,6 +79,7 @@ class LSTMOptimizer_Trainer():
                             cell_output, state = cell(grad_h_t, state) 
                             g_new_i = tf.reduce_sum(input_tensor=cell_output) # 使用lstm输出状态的权值和作为f的参数i的变化量
                             g_new_list.append(g_new_i)
+                            state_list[i] = state
 
                         # 转换成tensor
                         g_new = tf.reshape(tf.squeeze(tf.stack(g_new_list)), [n_dimension, 1])  # [n_dimension, 1] tensor

@@ -6,7 +6,7 @@ import numpy as np
 # 每个 epoch 只有一个batch，就是把所有 num_samples 个函数的loss加起来作为总loss然后进行优化
 # 一共有 max_epoch 个epoch
 
-num_samples = 1 # 随机取样的函数个数(一个epoch的大小) 
+num_samples = 1 # 
 #batch_size = 1
 
 n_unroll = 20 # BPTT中unroll的数量
@@ -43,8 +43,8 @@ class LSTMOptimizer():
             cell_list = []
             for i in range(n_dimension):
                 cell_list.append(tf.compat.v1.nn.rnn_cell.MultiRNNCell([LSTMCell() for _ in range(num_layers)])) 
-            batch_size = 1
-            state_list = [cell_list[i].zero_state(batch_size, tf.float32) for i in range(n_dimension)]
+
+            state_list = [cell_list[i].zero_state(1, tf.float32) for i in range(n_dimension)]
             g_new_list = []
             for i in range(n_dimension): # 遍历每个维度
                 cell = cell_list[i]
@@ -56,6 +56,7 @@ class LSTMOptimizer():
                 cell_output, state = cell(grad_h_t, state) 
                 g_new_i = tf.reduce_sum(input_tensor=cell_output)
                 g_new_list.append(g_new_i)
+                #state_list[i] = state # ！！！应该有叭
 
             self.g_new = tf.reshape(tf.squeeze(tf.stack(g_new_list)), [n_dimension, 1]) 
             self.sess.run(tf.compat.v1.global_variables_initializer())

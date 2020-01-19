@@ -23,13 +23,9 @@ matplotlib 3.1.2
 
 本项目复现了论文中的第一个实验：训练一个**寻找多元二次函数最小值的优化器**
 
-运行 `python train_optimizer.py` 或 `python train_optimizer_new.py` 来训练一个优化器
+运行 `python train_optimizer.py` 来训练一个优化器
 
-运行 `python test.py` 或 `python test_new.py` 来进行测试
-
-**两者的不同：**
-- 有`_new`后缀的是完全使用tensorflow2.0动态图的版本
-- 没有`_new`后缀的测试部分使用了动态图，优化器训练部分使用了静态图（部分借鉴了[runopti的项目](https://github.com/runopti/Learning-To-Learn)）
+运行 `python test.py` 来进行测试
 
 本项目的代码逻辑可能和DeepMind官方项目有所不同，下面将详细说明：
 
@@ -53,7 +49,11 @@ matplotlib 3.1.2
 
 ### 其他
 
-`MyModel`是优化器的目标模型，可以通过修改MyModel来使优化器适用于其他任务。
+本项目完全使用了 tensorflow2.0 的动态图（eager execution）
+
+`class LSTMOptimizer`是优化器类
+
+`class MyModel`是优化器的目标模型类，可以通过修改MyModel来使优化器适用于其他任务。
 
 ## 效果展示
 

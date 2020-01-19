@@ -6,15 +6,15 @@ import numpy as np
 # 每个 epoch 只有一个batch，就是把所有 num_samples 个函数的loss加起来作为总loss然后进行优化
 # 一共有 max_epoch 个epoch
 
-num_samples = 10 # 随机取样的函数个数(一个epoch的大小) 
-#batch_size = 10
+num_samples = 1 # 随机取样的函数个数(一个epoch的大小) 
+#batch_size = 1
 
 n_unroll = 20 # BPTT中unroll的数量
 n_dimension = 5 # 原问题中f的参数的数量
 hidden_size = 20 # LSTM中隐藏层的大小
 num_layers = 2 # LSTM的层数
 
-max_epoch = 20 
+max_epoch = 50
 
 optim_method = "lstm"
 
@@ -33,7 +33,7 @@ def LSTMCell():
     return tf.compat.v1.nn.rnn_cell.BasicLSTMCell(hidden_size, reuse=tf.compat.v1.get_variable_scope().reuse)
 
 class LSTMOptimizer():
-    def __init__(self):
+    def __init__(self, path = "variable_dict.pickle"):
         self.graph = tf.Graph()
         self.sess = tf.compat.v1.Session(graph = self.graph)
 
@@ -55,18 +55,15 @@ class LSTMOptimizer():
 
                 cell_output, state = cell(grad_h_t, state) 
                 g_new_i = tf.reduce_sum(input_tensor=cell_output)
-
                 g_new_list.append(g_new_i)
 
             self.g_new = tf.reshape(tf.squeeze(tf.stack(g_new_list)), [n_dimension, 1]) 
-
             self.sess.run(tf.compat.v1.global_variables_initializer())
 
             ## 将已训练的optimizier复原
             import pickle
-            with open("variable_dict.pickle", "rb") as f:
+            with open(path, "rb") as f:
                 variable_dict = pickle.load(f)
-            
             for var in tf.compat.v1.trainable_variables():
                 if var.name in variable_dict:
                     #print("[hi]", var.name)
@@ -74,7 +71,7 @@ class LSTMOptimizer():
                     self.sess.run(assign_op)
 
     
-    def optimize(self, grads):
+    def __call__(self, grads):
         g_new_val = self.sess.run(self.g_new, feed_dict={self.grad_f: grads})
         return g_new_val
 
@@ -98,7 +95,7 @@ def calc_loss(model, W, y): # 一个sample的loss
 loss_history = []
 lr = 0.1
 SGD_optimizer = tf.keras.optimizers.SGD(learning_rate=lr)
-lstm_optimizer = LSTMOptimizer()
+LSTM_optimizer = LSTMOptimizer("variable_dict.pickle")
 
 def train_step(W, y):
     with tf.GradientTape() as tape:
@@ -118,7 +115,7 @@ def train_step(W, y):
         #optimizer.apply_gradients(zip(grads, [model.theta]))
         model.theta.assign_sub(lr * grads[0]) # 手动进行SGD
     elif optim_method == 'lstm':
-        g_new_val = lstm_optimizer.optimize(grads[0].numpy())
+        g_new_val = LSTM_optimizer(grads[0].numpy())
         #print("!!!!!!!!!!!!!!!", type(g_new_val), g_new_val.shape)
         model.theta.assign_sub(-g_new_val)
 

@@ -3,7 +3,6 @@ import numpy as np
 
 # 说明：
 # 数据个数 num_samples 个，每个数据都是以同一个theta作为最小值点的 n_dimension 元二次函数
-# 每个函数(数据)进行 unroll 次优化
 # 每个 epoch 只有一个batch，就是把所有 num_samples 个函数的loss加起来作为总loss然后进行优化
 # 一共有 max_epoch 个epoch
 
@@ -17,7 +16,7 @@ num_layers = 2 # LSTM的层数
 
 max_epoch = 20
 
-optim_method = "lstm"
+optim_method = "SGD"
 
 # W 和 y 是训练数据, theta是模型参数
 def get_n_samples(n_dimension, n): # 一次取得n个样本
@@ -84,9 +83,8 @@ class LSTMOptimizer(tf.keras.Model):
 
 LSTM_optimizer = LSTMOptimizer(hidden_size, num_layers, n_dimension, batch_size=1)
 checkpoint = tf.train.Checkpoint(model=LSTM_optimizer)   # 键名保持为“myAwesomeModel”
-checkpoint.restore('LSTM_optimizer.tf-1')
+checkpoint.restore('./models/LSTM_optimizer.tf-1')
 
-# 每个函数做 n_unroll 次叭, 最后的 loss 作为这个函数的 loss
 # 这里每个 epoch 都是同一个函数，相当于对一个函数做了 max_epoch 次
 def train_step(W, y): 
     LSTM_optimizer.refresh_state()
@@ -123,6 +121,13 @@ def train(epochs):
 def main():
     train(epochs = max_epoch)
     print(loss_history, sep='\n')
+
+    import matplotlib.pyplot as plt
+    #loss_history = loss_history[3:]
+    plt.plot(range(len(loss_history)), loss_history)
+    imagename = "figure_" + optim_method + ".png"
+    plt.savefig(imagename)	
+    plt.show()
 
 if __name__ == "__main__":
     main()

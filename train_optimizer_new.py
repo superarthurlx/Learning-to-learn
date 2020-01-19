@@ -125,7 +125,7 @@ def train():
     #LSTM_optimizer.save('LSTM_optimizer.tf', save_format='tf')
     #LSTM_optimizer.save_weights('LSTM_optimizer.h5')
     checkpoint = tf.train.Checkpoint(model=LSTM_optimizer)
-    checkpoint.save('LSTM_optimizer.tf')
+    checkpoint.save('./models/LSTM_optimizer.tf')
 
 if __name__ == "__main__":
     train()

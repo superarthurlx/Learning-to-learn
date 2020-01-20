@@ -16,7 +16,7 @@ num_layers = 2 # LSTM的层数
 
 max_epoch = 20
 
-optim_method = "SGD"
+optim_method = "lstm"
 
 # W 和 y 是训练数据, theta是模型参数
 def get_n_samples(n_dimension, n): # 一次取得n个样本
@@ -90,6 +90,7 @@ def train_step(W, y):
     LSTM_optimizer.refresh_state()
 
     with tf.GradientTape() as tape:
+        tape.watch(model.theta)
         loss_value = 0
         for i in range(num_samples):
             Wi = W[i]
@@ -104,15 +105,17 @@ def train_step(W, y):
 
     if optim_method == 'SGD':
         #optimizer.apply_gradients(zip(grads, [model.theta]))
-        model.theta.assign_sub(lr * grads[0]) # 手动进行SGD
+        # model.theta.assign_sub(lr * grads[0]) # 手动进行SGD
+        model.theta = model.theta - lr * grads[0]
     elif optim_method == 'lstm':
         g_new_val = LSTM_optimizer(grads[0].numpy())
         #print("!!!!!!!!!!!!!!!", type(g_new_val), g_new_val.shape)
-        model.theta.assign_sub(-g_new_val)
+        model.theta = model.theta + g_new_val
 
 
 def train(epochs):
     W, y = get_n_samples(n_dimension, num_samples)
+    LSTM_optimizer.refresh_state()
     for epoch in range(epochs):
         train_step(W, y)
         print ('Epoch {} finished'.format(epoch))

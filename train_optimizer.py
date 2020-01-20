@@ -15,7 +15,7 @@ hidden_size = 20 # LSTM中隐藏层的大小
 num_layers = 2 # LSTM的层数
 batch_size = 1
 
-max_epoch = 40 # 训练optimizer的epoch个数, 每个epoch会取样num_samples个，每个会展开n_unroll次
+max_epoch = 200 # 训练optimizer的epoch个数, 每个epoch会取样num_samples个，每个会展开n_unroll次
 
 # W 和 y 是训练数据, theta是模型参数
 def get_n_samples(n_dimension, n): # 一次取得n个样本
@@ -47,6 +47,7 @@ class LSTMOptimizer(tf.keras.Model):
         #print("----------------------grad_f\n", grad_f)
         self.time += 1
         g_new_list = []
+        #print("state", self.time, "\n", self.state_list[0])
         for i in range(n_dimension):
             cell = self.cell_list[i]
             state = self.state_list[i]
